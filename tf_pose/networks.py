@@ -3,10 +3,9 @@ from os.path import dirname, abspath
 
 import tensorflow as tf
 
+from tf_pose.network_cmu import CmuNetwork
 from tf_pose.network_mobilenet import MobilenetNetwork
 from tf_pose.network_mobilenet_thin import MobilenetNetworkThin
-
-from tf_pose.network_cmu import CmuNetwork
 from tf_pose.network_mobilenet_v2 import Mobilenetv2Network
 
 
@@ -35,7 +34,7 @@ def get_network(type, placeholder_input, sess_for_load=None, trainable=True):
         pretrain_path = 'pretrained/mobilenet_v1_0.75_224_2017_06_14/mobilenet_v1_0.75_224.ckpt'
         last_layer = 'MConv_Stage6_L{aux}_5'
 
-    elif type in ['mobilenet_v2_w1.4_r1.0', 'mobilenet_v2_large', 'mobilenet_v2_large_quantize']:       # m_v2_large
+    elif type in ['mobilenet_v2_w1.4_r1.0', 'mobilenet_v2_large', 'mobilenet_v2_large_quantize']:  # m_v2_large
         net = Mobilenetv2Network({'image': placeholder_input}, conv_width=1.4, conv_width2=1.0, trainable=trainable)
         pretrain_path = 'pretrained/mobilenet_v2_1.4_224/mobilenet_v2_1.4_224.ckpt'
         last_layer = 'MConv_Stage6_L{aux}_5'
@@ -59,7 +58,7 @@ def get_network(type, placeholder_input, sess_for_load=None, trainable=True):
         net = Mobilenetv2Network({'image': placeholder_input}, conv_width=0.75, conv_width2=0.75, trainable=trainable)
         pretrain_path = 'pretrained/mobilenet_v2_0.75_224/mobilenet_v2_0.75_224.ckpt'
         last_layer = 'MConv_Stage6_L{aux}_5'
-    elif type == 'mobilenet_v2_w0.5_r0.5' or type == 'mobilenet_v2_small':                                # m_v2_fast
+    elif type == 'mobilenet_v2_w0.5_r0.5' or type == 'mobilenet_v2_small':  # m_v2_fast
         net = Mobilenetv2Network({'image': placeholder_input}, conv_width=0.5, conv_width2=0.5, trainable=trainable)
         pretrain_path = 'pretrained/mobilenet_v2_0.5_224/mobilenet_v2_0.5_224.ckpt'
         last_layer = 'MConv_Stage6_L{aux}_5'

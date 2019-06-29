@@ -1,17 +1,16 @@
 from __future__ import absolute_import
 
+import abc
 import sys
 
-import abc
 import numpy as np
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
-from tf_pose.common import to_str
 from tf_pose import common
+from tf_pose.common import to_str
 
 DEFAULT_PADDING = 'SAME'
-
 
 _init_xavier = tf.contrib.layers.xavier_initializer()
 _init_norm = tf.truncated_normal_initializer(stddev=0.01)
@@ -21,9 +20,9 @@ _l2_regularizer_convb = tf.contrib.layers.l2_regularizer(common.regularizer_conv
 
 
 def layer(op):
-    '''
+    """
     Decorator for composable network layers.
-    '''
+    """
 
     def layer_decorated(self, *args, **kwargs):
         # Automatically set a name if not provided.
@@ -65,16 +64,16 @@ class BaseNetwork(object):
 
     @abc.abstractmethod
     def setup(self):
-        '''Construct the network. '''
+        """Construct the network. """
         raise NotImplementedError('Must be implemented by the subclass.')
 
     def load(self, data_path, session, ignore_missing=False):
-        '''
+        """
         Load network weights.
         data_path: The path to the numpy-serialized network weights
         session: The current TensorFlow session
         ignore_missing: If true, serialized weights for missing layers are ignored.
-        '''
+        """
         data_dict = np.load(data_path, encoding='bytes').item()
         for op_name, param_dict in data_dict.items():
             if isinstance(data_dict[op_name], np.ndarray):
@@ -105,9 +104,9 @@ class BaseNetwork(object):
                                 raise
 
     def feed(self, *args):
-        '''Set the input(s) for the next operation by replacing the terminal nodes.
+        """Set the input(s) for the next operation by replacing the terminal nodes.
         The arguments can be either layer names or the actual layers.
-        '''
+        """
         assert len(args) != 0
         self.terminals = []
         for fed_layer in args:
@@ -124,7 +123,7 @@ class BaseNetwork(object):
         return self
 
     def get_output(self, name=None):
-        '''Returns the current network output.'''
+        """Returns the current network output."""
         if not name:
             return self.terminals[-1]
         else:
@@ -134,24 +133,25 @@ class BaseNetwork(object):
         return self.get_output(name)
 
     def get_unique_name(self, prefix):
-        '''Returns an index-suffixed unique name for the given prefix.
+        """Returns an index-suffixed unique name for the given prefix.
         This is used for auto-generating layer names based on the type-prefix.
-        '''
+        """
         ident = sum(t.startswith(prefix) for t, _ in self.layers.items()) + 1
         return '%s_%d' % (prefix, ident)
 
     def make_var(self, name, shape, trainable=True):
-        '''Creates a new TensorFlow variable.'''
-        return tf.get_variable(name, shape, trainable=self.trainable & trainable, initializer=tf.contrib.layers.xavier_initializer())
+        """Creates a new TensorFlow variable."""
+        return tf.get_variable(name, shape, trainable=self.trainable & trainable,
+                               initializer=tf.contrib.layers.xavier_initializer())
 
     def validate_padding(self, padding):
-        '''Verifies that the padding is one of the supported ones.'''
+        """Verifies that the padding is one of the supported ones."""
         assert padding in ('SAME', 'VALID')
 
     @layer
     def normalize_vgg(self, input, name):
         # normalize input -0.5 ~ 0.5
-        input = tf.multiply(input, 1./ 256.0, name=name + '_divide')
+        input = tf.multiply(input, 1. / 256.0, name=name + '_divide')
         input = tf.add(input, -0.5, name=name + '_subtract')
         return input
 
@@ -399,3 +399,8 @@ class BaseNetwork(object):
                                          name='recover_fc')
             scale = input_feature * excitation
         return scale
+
+    @layer
+    def dilated_separable_conv(self, input, k_h, k_w, c_o, stride, name, relu=True, set_bias=True):
+        # TODO: implement me
+        pass

@@ -14,9 +14,10 @@ class Mobilenetv2Network(network_base.BaseNetwork):
         network_base.BaseNetwork.__init__(self, inputs, trainable)
 
     @layer
-    def base(self, input, name):
+    def base(self, input_, name):
         with tf.contrib.slim.arg_scope(mobilenet_v2.training_scope()):
-            net, endpoints = mobilenet_v2.mobilenet_base(input, self.conv_width, finegrain_classification_mode=(self.conv_width < 1.0))
+            net, endpoints = mobilenet_v2.mobilenet_base(input_, self.conv_width,
+                                                         finegrain_classification_mode=(self.conv_width < 1.0))
             for k, tensor in sorted(list(endpoints.items()), key=lambda x: x[0]):
                 self.layers['%s/%s' % (name, k)] = tensor
                 # print(k, tensor.shape)
@@ -97,6 +98,7 @@ class Mobilenetv2Network(network_base.BaseNetwork):
     def loss_last(self):
         return self.get_output('MConv_Stage6_L1_5'), self.get_output('MConv_Stage6_L2_5')
 
+    # noinspection PyMethodMayBeStatic
     def restorable_variables(self, only_backbone=True):
         vs = {v.op.name: v for v in tf.global_variables() if
               ('MobilenetV2' in v.op.name or (only_backbone is False and 'Openpose' in v.op.name)) and
