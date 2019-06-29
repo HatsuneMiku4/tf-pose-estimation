@@ -177,7 +177,7 @@ class BaseNetwork(object):
         return tf.image.resize_bilinear(input, sh, align_corners=False, name=name)
 
     @layer
-    def separable_conv(self, input, k_h, k_w, c_o, stride, name, relu=True, set_bias=True):
+    def separable_conv(self, input, k_h, k_w, c_o, stride, name, dilation_rate=1, relu=True, set_bias=True):
         with slim.arg_scope([slim.batch_norm], decay=0.999, fused=common.batchnorm_fused, is_training=self.trainable):
             output = slim.separable_convolution2d(input,
                                                   num_outputs=None,
@@ -185,6 +185,7 @@ class BaseNetwork(object):
                                                   trainable=self.trainable,
                                                   depth_multiplier=1.0,
                                                   kernel_size=[k_h, k_w],
+                                                  rate=dilation_rate,
                                                   # activation_fn=common.activation_fn if relu else None,
                                                   activation_fn=None,
                                                   # normalizer_fn=slim.batch_norm,
@@ -401,6 +402,38 @@ class BaseNetwork(object):
         return scale
 
     @layer
-    def dilated_separable_conv(self, input, k_h, k_w, c_o, stride, name, relu=True, set_bias=True):
-        # TODO: implement me
-        pass
+    def lightweight_conv7(self, input, c_o, name, relu=True, set_bias=True):
+        """
+        Replace 7x7 convolutions -> ResidualModule[1x1 -> 3x3 -> 3x3[dilation=2]]
+        """
+
+        with slim.arg_scope([slim.batch_norm], decay=0.999, fused=common.batchnorm_fused, is_training=self.trainable):
+            shared_kwargs = {
+                'stride': 1,
+                'activation_fn': common.activation_fn if relu else None,
+                'weights_initializer': _init_xavier,
+                'biases_initializer': _init_zero if set_bias else None,
+                'normalizer_fn': slim.batch_norm,
+                'trainable': self.trainable,
+                'weights_regularizer': None,
+            }
+
+            output = slim.convolution2d(input, c_o,
+                                        kernel_size=[1, 1],
+                                        scope=name + '_pointwise',
+                                        **shared_kwargs)
+
+            residual = output
+
+            output = slim.convolution2d(input, c_o,
+                                        kernel_size=[3, 3],
+                                        scope=name + '_spatial',
+                                        **shared_kwargs)
+
+            output = slim.convolution2d(input, c_o,
+                                        rate=2,  # dilation_rate
+                                        kernel_size=[3, 3],
+                                        scope=name + '_dilated',
+                                        **shared_kwargs)
+
+            return residual + output

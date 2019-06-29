@@ -1,5 +1,6 @@
 import matplotlib as mpl
-mpl.use('Agg')      # training mode, no screen should be open. (It will block training loop)
+
+mpl.use('Agg')  # training mode, no screen should be open. (It will block training loop)
 
 import argparse
 import logging
@@ -11,10 +12,10 @@ import numpy as np
 import tensorflow as tf
 from tqdm import tqdm
 
-from pose_dataset import get_dataflow_batch, DataFlowToQueue, CocoPose
-from pose_augment import set_network_input_wh, set_network_scale
-from common import get_sample_images
-from networks import get_network
+from .pose_dataset import get_dataflow_batch, DataFlowToQueue, CocoPose
+from .pose_augment import set_network_input_wh, set_network_scale
+from .common import get_sample_images
+from .networks import get_network
 
 logger = logging.getLogger('train')
 logger.handlers.clear()
@@ -24,7 +25,6 @@ ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Training codes for Openpose using Tensorflow')
@@ -60,7 +60,8 @@ if __name__ == '__main__':
 
     logger.info('define model+')
     with tf.device(tf.DeviceSpec(device_type="CPU")):
-        input_node = tf.placeholder(tf.float32, shape=(args.batchsize, args.input_height, args.input_width, 3), name='image')
+        input_node = tf.placeholder(tf.float32, shape=(args.batchsize, args.input_height, args.input_width, 3),
+                                    name='image')
         vectmap_node = tf.placeholder(tf.float32, shape=(args.batchsize, output_h, output_w, 38), name='vectmap')
         heatmap_node = tf.placeholder(tf.float32, shape=(args.batchsize, output_h, output_w, 19), name='heatmap')
 
@@ -80,7 +81,8 @@ if __name__ == '__main__':
     logger.debug(q_vect)
 
     # define model for multi-gpu
-    q_inp_split, q_heat_split, q_vect_split = tf.split(q_inp, args.gpus), tf.split(q_heat, args.gpus), tf.split(q_vect, args.gpus)
+    q_inp_split, q_heat_split, q_vect_split = tf.split(q_inp, args.gpus), tf.split(q_heat, args.gpus), tf.split(q_vect,
+                                                                                                                args.gpus)
 
     output_vectmap = []
     output_heatmap = []
@@ -101,8 +103,10 @@ if __name__ == '__main__':
 
                 l1s, l2s = net.loss_l1_l2()
                 for idx, (l1, l2) in enumerate(zip(l1s, l2s)):
-                    loss_l1 = tf.nn.l2_loss(tf.concat(l1, axis=0) - q_vect_split[gpu_id], name='loss_l1_stage%d_tower%d' % (idx, gpu_id))
-                    loss_l2 = tf.nn.l2_loss(tf.concat(l2, axis=0) - q_heat_split[gpu_id], name='loss_l2_stage%d_tower%d' % (idx, gpu_id))
+                    loss_l1 = tf.nn.l2_loss(tf.concat(l1, axis=0) - q_vect_split[gpu_id],
+                                            name='loss_l1_stage%d_tower%d' % (idx, gpu_id))
+                    loss_l2 = tf.nn.l2_loss(tf.concat(l2, axis=0) - q_heat_split[gpu_id],
+                                            name='loss_l2_stage%d_tower%d' % (idx, gpu_id))
                     losses.append(tf.reduce_mean([loss_l1, loss_l2]))
 
                 last_losses_l1.append(loss_l1)
@@ -124,7 +128,8 @@ if __name__ == '__main__':
             starter_learning_rate = float(args.lr)
             # learning_rate = tf.train.exponential_decay(starter_learning_rate, global_step,
             #                                            decay_steps=10000, decay_rate=0.33, staircase=True)
-            learning_rate = tf.train.cosine_decay(starter_learning_rate, global_step, args.max_epoch * step_per_epoch, alpha=0.0)
+            learning_rate = tf.train.cosine_decay(starter_learning_rate, global_step, args.max_epoch * step_per_epoch,
+                                                  alpha=0.0)
         else:
             lrs = [float(x) for x in args.lr.split(',')]
             boundaries = [step_per_epoch * 5 * i for i, _ in range(len(lrs)) if i > 0]
@@ -213,11 +218,17 @@ if __name__ == '__main__':
                 break
 
             if gs_num - last_gs_num >= 500:
-                train_loss, train_loss_ll, train_loss_ll_paf, train_loss_ll_heat, lr_val, summary = sess.run([total_loss, total_loss_ll, total_loss_ll_paf, total_loss_ll_heat, learning_rate, merged_summary_op])
+                train_loss, train_loss_ll, train_loss_ll_paf, train_loss_ll_heat, lr_val, summary = sess.run(
+                    [total_loss, total_loss_ll, total_loss_ll_paf, total_loss_ll_heat, learning_rate,
+                     merged_summary_op])
 
                 # log of training loss / accuracy
                 batch_per_sec = (gs_num - initial_gs_num) / (time.time() - time_started)
-                logger.info('epoch=%.2f step=%d, %0.4f examples/sec lr=%f, loss=%g, loss_ll=%g, loss_ll_paf=%g, loss_ll_heat=%g' % (gs_num / step_per_epoch, gs_num, batch_per_sec * args.batchsize, lr_val, train_loss, train_loss_ll, train_loss_ll_paf, train_loss_ll_heat))
+                logger.info(
+                    'epoch=%.2f step=%d, %0.4f examples/sec lr=%f, loss=%g, '
+                    'loss_ll=%g, loss_ll_paf=%g, loss_ll_heat=%g' % (
+                        gs_num / step_per_epoch, gs_num, batch_per_sec * args.batchsize, lr_val, train_loss,
+                        train_loss_ll, train_loss_ll_paf, train_loss_ll_heat))
                 last_gs_num = gs_num
 
                 if last_log_epoch1 < curr_epoch:
@@ -241,7 +252,8 @@ if __name__ == '__main__':
                 # log of test accuracy
                 for images_test, heatmaps, vectmaps in validation_cache:
                     lss, lss_ll, lss_ll_paf, lss_ll_heat, vectmap_sample, heatmap_sample = sess.run(
-                        [total_loss, total_loss_ll, total_loss_ll_paf, total_loss_ll_heat, output_vectmap, output_heatmap],
+                        [total_loss, total_loss_ll, total_loss_ll_paf, total_loss_ll_heat, output_vectmap,
+                         output_heatmap],
                         feed_dict={q_inp: images_test, q_vect: vectmaps, q_heat: heatmaps}
                     )
                     average_loss += lss * len(images_test)
@@ -250,7 +262,9 @@ if __name__ == '__main__':
                     average_loss_ll_heat += lss_ll_heat * len(images_test)
                     total_cnt += len(images_test)
 
-                logger.info('validation(%d) %s loss=%f, loss_ll=%f, loss_ll_paf=%f, loss_ll_heat=%f' % (total_cnt, args.tag, average_loss / total_cnt, average_loss_ll / total_cnt, average_loss_ll_paf / total_cnt, average_loss_ll_heat / total_cnt))
+                logger.info('validation(%d) %s loss=%f, loss_ll=%f, loss_ll_paf=%f, loss_ll_heat=%f' % (
+                    total_cnt, args.tag, average_loss / total_cnt, average_loss_ll / total_cnt,
+                    average_loss_ll_paf / total_cnt, average_loss_ll_heat / total_cnt))
                 last_gs_num2 = gs_num
 
                 sample_image = [enqueuer.last_dp[0][i] for i in range(4)]
@@ -269,7 +283,8 @@ if __name__ == '__main__':
 
                 test_results = []
                 for i in range(len(val_image)):
-                    test_result = CocoPose.display_image(val_image[i], heatMat[len(sample_image) + i], pafMat[len(sample_image) + i], as_numpy=True)
+                    test_result = CocoPose.display_image(val_image[i], heatMat[len(sample_image) + i],
+                                                         pafMat[len(sample_image) + i], as_numpy=True)
                     test_result = cv2.resize(test_result, (640, 640))
                     test_result = test_result.reshape([640, 640, 3]).astype(float)
                     test_results.append(test_result)
