@@ -3,10 +3,11 @@ from os.path import dirname, abspath
 
 import tensorflow as tf
 
-from tf_pose.network_cmu import CmuNetwork
-from tf_pose.network_mobilenet import MobilenetNetwork
-from tf_pose.network_mobilenet_thin import MobilenetNetworkThin
-from tf_pose.network_mobilenet_v2 import Mobilenetv2Network
+from network_cmu import CmuNetwork
+from network_mobilenet import MobilenetNetwork
+from network_mobilenet_thin import MobilenetNetworkThin
+from network_mobilenet_v2 import Mobilenetv2Network
+from network_dilated_mobilenet import DilatedMobilenetNetwork
 
 
 def _get_base_path():
@@ -92,6 +93,11 @@ def get_network(type, placeholder_input, sess_for_load=None, trainable=True):
         net = CmuNetwork({'image': placeholder_input}, trainable=trainable)
         pretrain_path = 'numpy/openpose_vgg16.npy'
         last_layer = 'Mconv7_stage6_L{aux}'
+
+    elif type == 'dilated_mobilenet_1.0':
+        net = DilatedMobilenetNetwork({'image': placeholder_input}, conv_width=1, conv_width2=1, trainable=trainable)
+        pretrain_path = 'pretrained/mobilenet_dilated_1.0/mobilenet_dilated_1.0.ckpt'
+        last_layer = 'MConv_Stage2_L{aux}_5'
 
     else:
         raise Exception('Invalid Model Name.')

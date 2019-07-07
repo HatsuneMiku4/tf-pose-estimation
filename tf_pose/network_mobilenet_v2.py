@@ -2,9 +2,9 @@ from __future__ import absolute_import
 
 import tensorflow as tf
 
-from tf_pose import network_base
-from tf_pose.mobilenet import mobilenet_v2
-from tf_pose.network_base import layer
+import network_base
+from mobilenet import mobilenet_v2
+from network_base import layer
 
 
 class Mobilenetv2Network(network_base.BaseNetwork):
@@ -15,7 +15,7 @@ class Mobilenetv2Network(network_base.BaseNetwork):
 
     @layer
     def base(self, input_, name):
-        with tf.contrib.slim.arg_scope(mobilenet_v2.training_scope()):
+        with tf.contrib.slim.arg_scope(mobilenet_v2.training_scope(is_training=self.trainable)):
             net, endpoints = mobilenet_v2.mobilenet_base(input_, self.conv_width,
                                                          finegrain_classification_mode=(self.conv_width < 1.0))
             for k, tensor in sorted(list(endpoints.items()), key=lambda x: x[0]):

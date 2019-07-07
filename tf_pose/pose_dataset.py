@@ -45,9 +45,9 @@ mplset = False
 
 
 class CocoMetadata:
-    # __coco_parts = 57
-    __coco_parts = 19
-    __coco_vecs = list(zip(
+    # _coco_parts = 57
+    _coco_parts = 19
+    _coco_vecs = list(zip(
         [2, 9,  10, 2,  12, 13, 2, 3, 4, 3,  2, 6, 7, 6,  2, 1,  1,  15, 16],
         [9, 10, 11, 12, 13, 14, 3, 4, 5, 17, 6, 7, 8, 18, 1, 15, 16, 17, 18]
     ))
@@ -104,9 +104,9 @@ class CocoMetadata:
 
         # logger.debug('joint size=%d' % len(self.joint_list))
 
-    @jit
+    # @jit
     def get_heatmap(self, target_size):
-        heatmap = np.zeros((CocoMetadata.__coco_parts, self.height, self.width), dtype=np.float32)
+        heatmap = np.zeros((CocoMetadata._coco_parts, self.height, self.width), dtype=np.float32)
 
         for joints in self.joint_list:
             for idx, point in enumerate(joints):
@@ -116,7 +116,7 @@ class CocoMetadata:
 
         heatmap = heatmap.transpose((1, 2, 0))
 
-        # background
+        # backgroundl
         heatmap[:, :, -1] = np.clip(1 - np.amax(heatmap, axis=2), 0.0, 1.0)
 
         if target_size:
@@ -148,12 +148,12 @@ class CocoMetadata:
                 heatmap[plane_idx][y][x] = max(heatmap[plane_idx][y][x], math.exp(-exp))
                 heatmap[plane_idx][y][x] = min(heatmap[plane_idx][y][x], 1.0)
 
-    @jit
+    # @jit
     def get_vectormap(self, target_size):
-        vectormap = np.zeros((CocoMetadata.__coco_parts*2, self.height, self.width), dtype=np.float32)
-        countmap = np.zeros((CocoMetadata.__coco_parts, self.height, self.width), dtype=np.int16)
+        vectormap = np.zeros((CocoMetadata._coco_parts * 2, self.height, self.width), dtype=np.float32)
+        countmap = np.zeros((CocoMetadata._coco_parts, self.height, self.width), dtype=np.int16)
         for joints in self.joint_list:
-            for plane_idx, (j_idx1, j_idx2) in enumerate(CocoMetadata.__coco_vecs):
+            for plane_idx, (j_idx1, j_idx2) in enumerate(CocoMetadata._coco_vecs):
                 j_idx1 -= 1
                 j_idx2 -= 1
 

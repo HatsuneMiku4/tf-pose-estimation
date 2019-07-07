@@ -2,8 +2,8 @@ from __future__ import absolute_import
 
 import tensorflow as tf
 
-from tf_pose import network_base
-from tf_pose.network_base import layer
+import network_base
+from network_base import layer
 
 
 class DilatedMobilenetNetwork(network_base.BaseNetwork):
@@ -34,8 +34,8 @@ class DilatedMobilenetNetwork(network_base.BaseNetwork):
              .separable_conv(3, 3, depth(128), 1, name='Conv2d_3')  # 3_1
              .separable_conv(3, 3, depth(256), 2, name='Conv2d_4')  # 3_2
              .separable_conv(3, 3, depth(256), 1, name='Conv2d_5')  # 4_1
-             .separable_conv(3, 3, depth(512), 1, dilation_rate=2, name='Conv2d_6')  # 4_2
-             .separable_conv(3, 3, depth(512), 1, name='Conv2d_7')  # 5_1
+             .separable_conv(3, 3, depth(512), 1, name='Conv2d_6')  # 4_2
+             .separable_conv(3, 3, depth(512), 1, dilation_rate=2, name='Conv2d_7')  # 5_1
              .separable_conv(3, 3, depth(512), 1, name='Conv2d_8')  # 5_2
              .separable_conv(3, 3, depth(512), 1, name='Conv2d_9')  # 5_3
              .separable_conv(3, 3, depth(512), 1, name='Conv2d_10')  # 5_4

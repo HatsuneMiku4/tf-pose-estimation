@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from tf_pose import network_base
+import network_base
 import tensorflow as tf
 
 
